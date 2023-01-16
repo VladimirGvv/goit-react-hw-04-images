@@ -1,30 +1,26 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import styles from './Searchbar.module.scss'
 import PropTypes from 'prop-types';
 
-export class Searchbar extends Component {
-  state = {
-    query: '',
+export function Searchbar ({ onSubmit }) {
+  const [query, setQuery] = useState('');
+
+
+  const handleNameChange = e => setQuery(e.currentTarget.value.toLowerCase());
+
+  const handleSubmit = e => {
+    e.preventDefault();
+
+    onSubmit(query);
+    setQuery('');
   };
 
-  handleNameChange = event => {
-    this.setState({ query: event.currentTarget.value.toLowerCase() });
-  };
-
-  handleSubmit = event => {
-    event.preventDefault();
-
-    this.props.onSubmit(this.state.query);
-    this.setState({ query: '' });
-  };
-
-  render() {
-    return (
+  return (
       <header className={styles.Searchbar}>
-        <form onSubmit={this.handleSubmit} className={styles.SearchForm}>
+        <form onSubmit={handleSubmit} className={styles.SearchForm}>
           <input
-            value={this.state.query}
-            onChange={this.handleNameChange}
+            value={query}
+            onChange={handleNameChange}
             type="text"
             autoComplete="off"
             autoFocus
@@ -37,7 +33,7 @@ export class Searchbar extends Component {
         </form>
       </header>
     );
-  }
+  
 }
 
 Searchbar.propTypes = {

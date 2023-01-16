@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Searchbar } from './Searchbar/Searchbar';
 import api from '../FetchImages/fetchImages';
@@ -7,91 +7,67 @@ import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
 import styles from './App.module.scss'
 
-export class App extends Component {
-  state = {
-    query: '',
-    page: 1,
-    items: [],
-    showButton: false,
-    showModal: false,
-    largeImageURL: '',
-    loading: false,
-  };
+export function App() {
 
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      this.setState({ loading: true });
-      api
-        .fetchImages(this.state.query, this.state.page)
-        .then(items => {
-          if (items.hits.length === 0) {
-            this.setState({
-              showButton: false,
-            });
-          }
-          this.setState(prevState => ({
-            items: [...prevState.items, ...items.hits],
-          }));
-          this.setState({
-            showButton:
-              this.state.page < Math.ceil(items.total / 12) ? true : false,
-            loading: false,
-          });
-        })
-        .catch(error => console.log(error))
-        .finally(() => {
-          this.setState({ loading: false });
-        });
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState([]);
+  const [showButton, setShowButton] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const [loading, setLoading] = useState(false);
+
+ useEffect(() => {
+    if (query === '') {
+      return;
     }
-  }
+    setLoading(true);
+    api.fetchImages(query, page)
+      .then(items => {
+        if (items.hits.length === 0) {
+          setShowButton(false);
+        }
+        setItems(prevItems => [...prevItems, ...items.hits]);
+        setShowButton(page < Math.ceil(items.total / 12) ? true : false);
+        setLoading(false);
+      })
+      .catch(error => console.log(error))
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [query, page]);
 
-  handleFormSubmit = query => {
-    this.setState({
-      query,
-      page: 1,
-      items: [],
-      showButton: false,
-      showModal: false,
-      largeImageURL: '',
-      loading: false,
-    });
+  const handleFormSubmit = query => {
+    setQuery(query);
+    setPage(1);
+    setItems([]);
+    setShowButton(false);
+    setShowModal(false);
+    setLargeImageURL('');
+    setLoading(false);
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const toggleModal = () => setShowModal(showModal => !showModal);
+
+  const loadMore = () => setPage(prevPage => prevPage + 1);
+
+  const getImageUrl = url => {
+    setLargeImageURL(url);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
-
-  getImageUrl = url => {
-    this.setState({ largeImageURL: url });
-  };
-
-  render() {
-    const { items, showButton, largeImageURL, loading } = this.state;
-    return (
+  return (
       <div className={styles.App}>
-        <Searchbar onSubmit={this.handleFormSubmit} />
+        <Searchbar onSubmit={handleFormSubmit} />
         <ImageGallery
           items={items}
-          getImageUrl={this.getImageUrl}
-          toggleModal={this.toggleModal}
+          getImageUrl={getImageUrl}
+          toggleModal={toggleModal}
         />
-        {this.state.showModal && (
-          <Modal onClose={this.toggleModal} largeImageURL={largeImageURL} />
+        {showModal && (
+          <Modal onClose={toggleModal} largeImageURL={largeImageURL} />
         )}
         {loading && <Loader />}
-        {showButton && <Button loadMore={this.loadMore} />}
+        {showButton && <Button loadMore={loadMore} />}
       </div>
     );
-  }
 };
